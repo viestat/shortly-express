@@ -78,6 +78,24 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+
+// Where to post to?
+app.post('/login', function(req, res){
+  // db. some how insert sthings
+  new User({username: 'Pat', password: '12345'}).save().then(function(model){
+    res.send('POST works!');
+    console.log(model);
+  })
+});
+// 
+
 
 
 /************************************************************/
