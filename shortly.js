@@ -97,27 +97,30 @@ app.post('/login', function(req, res){
 app.post('/signup', function(req, res){
   var username = req.body.username;
   var password = req.body.password;
+
   // Generate aand store salt somehow,
   bcrypt.genSalt(10, function(err, salt) {
+    password+=salt;
     bcrypt.hash(password, salt, function(err, hash) {
         // Store hash in your password DB. 
+        password = hash;
+        new User({ username: username }).fetch().then(function(found) {
+          if(found){
+            res.send('Username already exists!');
+          } else {
+            new User({username: username, password: password, salt: salt}).save().then(function(model){
+        
+              res.send('POST works!');
+              // console.log(model);
+            })
+            
+            console.log('RIGHT on!!');
+          }
+        })
     });
 }); 
   // Append it to the user password & hash the result
   // Insert it in the database along with username & salt.
-    new User({ username: username }).fetch().then(function(found) {
-      if(found){
-        res.send('Username already exists!');
-      } else {
-        new User({username: username, password: password}).save().then(function(model){
-    
-          res.send('POST works!');
-          console.log(model);
-        })
-        
-        console.log('RIGHT on!!');
-      }
-    })
 
 
   // db. some how insert sthings
