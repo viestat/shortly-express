@@ -91,7 +91,37 @@ app.get('/signup', function(req, res) {
 
 // Where to post to?
 app.post('/login', function(req, res){
-  var body = req.body;
+  var username = req.body.username;
+  var password = req.body.password;
+  var oldPassword; 
+  var attr;
+  new User({ username: username }).fetch().then(function(row) {
+    if(row){
+      attr = row.attributes;
+      oldPassword = attr.password;
+      password += attr.salt;
+      bcrypt.hash(password, attr.salt, function(err, hash){
+        password = hash;
+        if(oldPassword === password){
+          console.log('it WOrks!!')
+          res.redirect('/');
+          //put the name of the user, somwhere on the screen :)
+        } else {
+          res.redirect('/login');
+          res.send('Wrong!')
+        }
+      });
+      
+    } else {
+      
+       res.send('POST Failed!');
+    }
+  });
+
+
+
+
+
 });
 
 app.post('/signup', function(req, res){
@@ -111,7 +141,6 @@ app.post('/signup', function(req, res){
             new User({username: username, password: password, salt: salt}).save().then(function(model){
         
               res.send('POST works!');
-              // console.log(model);
             })
             
             console.log('RIGHT on!!');
