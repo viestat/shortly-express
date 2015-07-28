@@ -13,8 +13,18 @@ var Click = require('./app/models/click');
 
 //ready to be refractored
 var bcrypt = require('bcrypt');
+var session = require('express-session');
 
 var app = express();
+
+
+app.use(session({
+    cookieName: 'cookieMonster',
+    secret: 'octocat',
+    resave: true,
+    saveUninitialized: true
+}));
+
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -26,21 +36,40 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
-function(req, res) {
-  res.render('index');
+app.get('/', function(req, res) {
+  // If user is logged in, leave it at the root
+    // else, 
+    console.log(req.session.user)
+  if (req.session.user) {
+    console.log("ID APPROVED <============================")
+    res.render('index');
+  } else {
+    console.log("LOGIN NOW <============================")
+    res.render('login')
+  }
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  if (req.session.user) {
+    console.log("ID APPROVED <============================")
+    res.render('index');
+  } else {
+    console.log("LOGIN NOW <============================")
+    res.render('login')
+  }
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if (req.session.user) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    console.log("LOGIN NOW <============================")
+    res.render('login')
+  }
 });
 
 app.post('/links', 
@@ -54,6 +83,7 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
+      console.log(found.attributes, "<============================ FOUND ATTRIBUTES");
       res.send(200, found.attributes);
     } else {
       util.getUrlTitle(uri, function(err, title) {
@@ -69,6 +99,7 @@ function(req, res) {
         });
 
         link.save().then(function(newLink) {
+          console.log(newLink, "<-================================ Found NEWLINK");
           Links.add(newLink);
           res.send(200, newLink);
         });
@@ -76,13 +107,21 @@ function(req, res) {
     }
   });
 });
-
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
 app.get('/login', function(req, res) {
+  // Check if your already logged in and if you are, log out
+    console.log(res.session);
+    console.log(req.session.user, "<===================");
+  if(req.session.user){
+    req.session.destroy();
+  }
+
   res.render('login');
+
+
 });
 
 app.get('/signup', function(req, res) {
@@ -100,11 +139,19 @@ app.post('/login', function(req, res){
       attr = row.attributes;
       oldPassword = attr.password;
       password += attr.salt;
+
       bcrypt.hash(password, attr.salt, function(err, hash){
         password = hash;
         if(oldPassword === password){
+          // app.use(session({secret: 'keyboard cat'}));
+
           console.log('it WOrks!!')
+          // req.session.regenerate(function(){
+          req.session.user = username;
+          console.log(req.session.user)
           res.redirect('/');
+          // });
+          console.log(req.session.user,'<=========')
           //put the name of the user, somwhere on the screen :)
         } else {
           res.redirect('/login');
@@ -117,12 +164,16 @@ app.post('/login', function(req, res){
        res.send('POST Failed!');
     }
   });
-
-
-
-
-
 });
+// I added the below block of code
+// app.get('/', function(req, res) {
+//   console.log("----->> FETCHING USER DATA <<--------")
+//   if (req.session && req.session.user) {
+//     // console.log("----->> FETCHING USER DATA <<--------")
+//     res.render('/');
+//   }
+// 
+// });
 
 app.post('/signup', function(req, res){
   var username = req.body.username;
