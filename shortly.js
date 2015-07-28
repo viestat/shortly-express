@@ -88,13 +88,31 @@ app.get('/signup', function(req, res) {
 
 // Where to post to?
 app.post('/login', function(req, res){
-  // db. some how insert sthings
-  new User({username: 'Pat', password: '12345'}).save().then(function(model){
-    res.send('POST works!');
-    console.log(model);
-  })
+  var body = req.body;
 });
-// 
+
+app.post('/signup', function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+
+    new User({ username: username }).fetch().then(function(found) {
+      if(found){
+        res.send('Username already exists!');
+      } else {
+        new User({username: username, password: password}).save().then(function(model){
+          res.send('POST works!');
+          console.log(model);
+        })
+        
+        console.log('RIGHT on!!');
+      }
+    })
+
+
+  // db. some how insert sthings
+  // Get the info from the form
+});
+
 
 
 
